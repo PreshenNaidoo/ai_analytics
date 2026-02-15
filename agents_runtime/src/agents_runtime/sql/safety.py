@@ -7,12 +7,14 @@ from agents_runtime.structured_outputs import AnalyzeResult, SQLQuery
 
 
 def strip_sql_comments(sql: str) -> str:
+    """Remove SQL comments before safety checks."""
     sql = re.sub(r"/\*.*?\*/", " ", sql, flags=re.S)
     sql = re.sub(r"--.*?$", " ", sql, flags=re.M)
     return sql
 
 
 def check_select_only_sql(sql: str) -> str | None:
+    """Return a safety error message or None if SQL is allowed."""
     s = strip_sql_comments(sql).strip()
     if not s:
         return "Empty SQL is not allowed"
@@ -38,6 +40,7 @@ def check_select_only_sql(sql: str) -> str | None:
 
 
 def enforce_sql_safety_sqls(sqls: list[SQLQuery]) -> None:
+    """Validate a list of SQL statements and raise on unsafe text."""
     for q in sqls:
         reason = check_select_only_sql(q.sql)
         if reason:
@@ -45,6 +48,7 @@ def enforce_sql_safety_sqls(sqls: list[SQLQuery]) -> None:
 
 
 def enforce_analyze_result_safety(ares: AnalyzeResult) -> None:
+    """Validate every SQL statement inside an AnalyzeResult."""
     enforce_sql_safety_sqls(ares.sql_appendix)
     if ares.detail_query:
         reason = check_select_only_sql(ares.detail_query.sql)

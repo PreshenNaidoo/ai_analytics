@@ -7,6 +7,7 @@ import os
 
 @dataclass(frozen=True)
 class RuntimeSettings:
+    """Holds runtime settings used by the agents backend."""
     # Models and temperatures
     model_general: str = "gpt-4.1-mini"
     model_planner: str = "gpt-4.1-mini"
@@ -37,6 +38,7 @@ class RuntimeSettings:
 
     @staticmethod
     def from_env() -> "RuntimeSettings":
+        """Build settings from environment variables with safe defaults."""
         base = RuntimeSettings()
         return RuntimeSettings(
             model_general=os.getenv("MODEL_GENERAL", base.model_general),

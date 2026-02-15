@@ -9,6 +9,7 @@ from agents.mcp import MCPServerStdio
 
 @dataclass
 class MCPServers:
+    """Container for all MCP server clients used by the runtime."""
     mssql_server: MCPServerStdio
     chart_server: MCPServerStdio
     pdf_reader_server: MCPServerStdio
@@ -17,6 +18,7 @@ class MCPServers:
 
 
 def build_servers(timeout_seconds: int = 60) -> MCPServers:
+    """Create all MCP servers with a shared client timeout."""
     sql_params = {
         "command": "mssql-mcp-server",
         "env": {"MSSQL_CONNECTION_STRING": os.getenv("MSSQL_CONNECTION_STRING")},

@@ -9,10 +9,12 @@ from agents_runtime.config import RuntimeSettings
 
 
 def kb_safe_key(db_key: str) -> str:
+    """Sanitize a db key so it is safe to use in folder names."""
     return re.sub(r"[^a-zA-Z0-9_\-]", "_", db_key)[:80]
 
 
 def get_kb_paths(db_key: str, settings: RuntimeSettings) -> dict[str, str]:
+    """Return and create the shared and db-specific KB folders."""
     base_dir = os.path.abspath(settings.knowledge_base_dir)
     shared_dir = os.path.join(base_dir, settings.shared_docs_subdir)
     db_dir = os.path.join(base_dir, kb_safe_key(db_key))
@@ -26,10 +28,12 @@ def get_kb_paths(db_key: str, settings: RuntimeSettings) -> dict[str, str]:
 
 
 def tokenize_for_match(text: str) -> list[str]:
+    """Tokenize prompt text for simple filename relevance scoring."""
     return [t for t in re.findall(r"[a-zA-Z0-9_]+", (text or "").lower()) if len(t) >= 3]
 
 
 def iter_kb_files(root_dir: str, allowed_extensions: tuple[str, ...]) -> list[str]:
+    """List supported document files recursively under a folder."""
     out: list[str] = []
     if not os.path.isdir(root_dir):
         return out
@@ -42,6 +46,7 @@ def iter_kb_files(root_dir: str, allowed_extensions: tuple[str, ...]) -> list[st
 
 
 def build_kb_context(db_key: str, user_prompt: str, settings: RuntimeSettings, max_files: int | None = None) -> dict[str, Any]:
+    """Build ranked candidate KB files for the current prompt."""
     paths = get_kb_paths(db_key, settings)
     max_files = max_files or settings.max_kb_candidate_files
     db_files = iter_kb_files(paths["knowledge_base_db_dir"], settings.kb_allowed_extensions)

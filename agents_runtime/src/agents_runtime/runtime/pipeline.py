@@ -24,6 +24,7 @@ from agents_runtime.structured_outputs import (
 
 
 def _parse_model(model_cls, text: str, label: str = "model_output"):
+    """Parse model output text into a typed Pydantic model."""
     text = (text or "").strip()
     if text.startswith("```"):
         text = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
@@ -33,6 +34,7 @@ def _parse_model(model_cls, text: str, label: str = "model_output"):
 
 
 def build_agents(ctx: RuntimeContext) -> dict[str, Agent]:
+    """Build all runtime agents with configured models and MCP tools."""
     s = ctx.settings
     doc_servers = [ctx.pdf_reader_server, ctx.word_reader_server, ctx.excel_server]
     sql_servers = [ctx.mssql_server, *doc_servers]
@@ -82,6 +84,7 @@ def build_agents(ctx: RuntimeContext) -> dict[str, Agent]:
 
 
 async def run_structured(agent: Agent, payload: dict[str, Any], model_cls, *, debug_label: str, max_turns: int):
+    """Run an agent and coerce output into the expected model class."""
     res = await Runner.run(agent, json.dumps(payload), max_turns=max_turns)
     out = res.final_output
 
@@ -95,6 +98,7 @@ async def run_structured(agent: Agent, payload: dict[str, Any], model_cls, *, de
 
 
 async def run_planner(ctx: RuntimeContext, agents: dict[str, Agent], db_key: str, user_prompt: str, rag_ctx: str) -> PlannerDecision:
+    """Run the planner step to decide if schema refresh is needed."""
     payload = {"user_request": user_prompt, "rag_context": rag_ctx, **build_kb_context(db_key, user_prompt, ctx.settings)}
     return await run_structured(
         agents["planner"],
@@ -106,6 +110,7 @@ async def run_planner(ctx: RuntimeContext, agents: dict[str, Agent], db_key: str
 
 
 async def run_sql_analyst_discover(ctx: RuntimeContext, agents: dict[str, Agent], db_key: str, user_prompt: str, rag_ctx: str) -> DBCatalogLite:
+    """Run discovery step and persist schema catalog memory."""
     payload = {
         "task_mode": "DISCOVER",
         "user_request": user_prompt,
@@ -132,6 +137,7 @@ async def run_sql_analyst_query(
     catalog: DBCatalogLite | None,
     verifier_fixes: list[str] | None = None,
 ) -> AnalyzeResult:
+    """Run SQL analysis step and enforce SQL safety checks."""
     payload = {
         "task_mode": "ANALYZE",
         "user_request": user_prompt,
@@ -160,6 +166,7 @@ async def run_chart_mapper(
     columns: list[str],
     sample_rows: list[list[Any]],
 ) -> ChartMapping:
+    """Run chart-mapper step using insight columns and sample rows."""
     payload = {"user_request": user_prompt, "columns": columns, "sample_rows": sample_rows[:10]}
     return await run_structured(
         agents["chart_mapper"],
@@ -179,6 +186,7 @@ async def run_narrator(
     chart_artifact: dict[str, Any] | None,
     detail_export_path: str | None,
 ) -> NarratorOutput:
+    """Run narrator step to produce user and developer outputs."""
     payload = {
         "mode": ares.mode,
         "total_rows": ares.total_rows,
@@ -202,6 +210,7 @@ async def run_narrator(
 
 
 async def run_request(ctx: RuntimeContext, user_prompt: str, db_key: str, use_narrator: bool = True) -> NotebookRunResult:
+    """Execute the full analytics pipeline for one user prompt."""
     agents = build_agents(ctx)
 
     rag_ctx = rag_retrieve(
@@ -243,6 +252,7 @@ async def run_request(ctx: RuntimeContext, user_prompt: str, db_key: str, use_na
     )
 
     async def _run_cm(prompt: str, cols: list[str], sample: list[list[Any]]) -> ChartMapping:
+        """Local adapter so chart helper can call chart mapper step."""
         return await run_chart_mapper(ctx, agents, prompt, cols, sample)
 
     chart_artifact = await maybe_generate_chart(
