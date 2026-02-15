@@ -19,6 +19,7 @@ from agents_runtime.sql.safety import check_select_only_sql
 
 
 def normalize_model_output(text: str) -> str:
+    """Normalize model text output by stripping markdown fences."""
     text = (text or "").strip()
     if text.startswith("```"):
         text = re.sub(r"^```(?:json)?\s*", "", text.strip(), flags=re.I)
@@ -27,6 +28,7 @@ def normalize_model_output(text: str) -> str:
 
 
 def extract_first_json_block(text: str) -> str:
+    """Extract the first valid JSON object/array from free text."""
     s = (text or "")
     starts = [i for i in [s.find("{"), s.find("[")] if i >= 0]
     if not starts:
@@ -62,6 +64,7 @@ def extract_first_json_block(text: str) -> str:
 
 
 def extract_jsonish_from_tool_result(result: Any) -> Any:
+    """Read JSON-like payloads from MCP tool result objects."""
     if not result or not getattr(result, "content", None):
         raise ValueError("Tool returned no content")
 
@@ -96,6 +99,7 @@ def extract_jsonish_from_tool_result(result: Any) -> Any:
 
 
 def rows_from_result_obj(obj: Any):
+    """Convert common tool result shapes into columns and rows."""
     if isinstance(obj, str):
         norm = normalize_model_output(obj)
         try:
@@ -161,6 +165,7 @@ def rows_from_result_obj(obj: Any):
 
 
 async def execute_query_programmatically(mssql_server, sql: str) -> tuple[list[str], list[list[Any]]]:
+    """Run a safe read-only SQL query through the MSSQL MCP server."""
     reason = check_select_only_sql(sql)
     if reason:
         raise ValueError(f"Unsafe programmatic SQL: {reason}")
@@ -175,6 +180,7 @@ async def execute_query_programmatically(mssql_server, sql: str) -> tuple[list[s
 
 
 def build_pyodbc_connection_string() -> str:
+    """Build a pyodbc connection string from environment variables."""
     raw = (os.getenv("MSSQL_CONNECTION_STRING") or "").strip()
     if raw and ("driver=" in raw.lower() or "dsn=" in raw.lower()):
         return raw
@@ -213,6 +219,7 @@ def build_pyodbc_connection_string() -> str:
 
 
 def execute_query_pyodbc_sync(sql: str) -> tuple[list[str], list[list[Any]]]:
+    """Run SQL synchronously with pyodbc and return columns and rows."""
     if pyodbc is None:
         raise RuntimeError("pyodbc is not installed in this environment")
     conn_str = build_pyodbc_connection_string()
@@ -228,6 +235,7 @@ def execute_query_pyodbc_sync(sql: str) -> tuple[list[str], list[list[Any]]]:
 
 
 async def execute_query_programmatically_large(sql: str) -> tuple[list[str], list[list[Any]]]:
+    """Run large read-only SQL via a thread using pyodbc."""
     reason = check_select_only_sql(sql)
     if reason:
         raise ValueError(f"Unsafe programmatic SQL: {reason}")
@@ -235,6 +243,7 @@ async def execute_query_programmatically_large(sql: str) -> tuple[list[str], lis
 
 
 def write_rows_to_csv(columns: list[str], rows: list[list[Any]], prefix: str = "ai_analytics_detail") -> str:
+    """Write query results to a temporary CSV file and return its path."""
     fd, path = tempfile.mkstemp(prefix=prefix, suffix=".csv")
     os.close(fd)
     with open(path, "w", newline="", encoding="utf-8") as f:
@@ -245,6 +254,7 @@ def write_rows_to_csv(columns: list[str], rows: list[list[Any]], prefix: str = "
 
 
 def read_top_rows_from_csv(path: str, n: int = 10) -> tuple[list[str], list[list[str]]]:
+    """Read the header and first n rows from a CSV file."""
     with open(path, "r", encoding="utf-8", newline="") as f:
         r = csv.reader(f)
         all_rows = list(r)

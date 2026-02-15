@@ -20,12 +20,14 @@ ALL_MEMORY_TYPES = (MEMORY_SCHEMA, MEMORY_QUERY_PATTERNS, MEMORY_SESSION)
 
 
 class MemoryDoc(TypedDict):
+    """A single memory record for Chroma upsert."""
     id: str
     doc: str
     meta: dict[str, Any]
 
 
 def collection_name_for(db_key: str, memory_type: str = MEMORY_QUERY_PATTERNS) -> str:
+    """Build a stable collection name from db key and memory type."""
     if memory_type not in ALL_MEMORY_TYPES:
         raise ValueError(f"Unknown memory_type '{memory_type}'. Expected one of {ALL_MEMORY_TYPES}")
     safe = re.sub(r"[^a-zA-Z0-9_\-]", "_", db_key)[:60]
@@ -33,11 +35,13 @@ def collection_name_for(db_key: str, memory_type: str = MEMORY_QUERY_PATTERNS) -
 
 
 def stable_fingerprint(*parts: str, size: int = 24) -> str:
+    """Create a deterministic short hash from one or more text parts."""
     joined = "||".join((p or "") for p in parts)
     return hashlib.sha256(joined.encode("utf-8")).hexdigest()[:size]
 
 
 def normalize_sql_for_fingerprint(sql: str) -> str:
+    """Normalize SQL text before hashing to reduce duplicate variants."""
     if not sql:
         return ""
     collapsed = re.sub(r"\s+", " ", sql).strip()
@@ -45,12 +49,14 @@ def normalize_sql_for_fingerprint(sql: str) -> str:
 
 
 def create_chroma_client(path: str | None = None) -> chromadb.PersistentClient:
+    """Create a persistent Chroma client at the given path."""
     chroma_dir = path or os.getenv("CHROMA_DIR", ".chroma_ai_analytics")
     os.makedirs(chroma_dir, exist_ok=True)
     return chromadb.PersistentClient(path=chroma_dir)
 
 
 def create_embedding_function(api_key: str | None = None, model_name: str | None = None):
+    """Create an OpenAI embedding function when an API key is available."""
     key = api_key or os.getenv("OPENAI_API_KEY")
     if not key:
         return None
@@ -59,6 +65,7 @@ def create_embedding_function(api_key: str | None = None, model_name: str | None
 
 
 def get_collection(chroma_client: chromadb.PersistentClient, db_key: str, memory_type: str = MEMORY_QUERY_PATTERNS, embedding_fn=None):
+    """Get or create a Chroma collection for one db key and memory type."""
     return chroma_client.get_or_create_collection(
         name=collection_name_for(db_key, memory_type),
         embedding_function=embedding_fn,
@@ -75,6 +82,7 @@ def rag_retrieve(
     max_chars: int = 2200,
     memory_types: tuple[str, ...] = ALL_MEMORY_TYPES,
 ) -> str:
+    """Retrieve merged context from selected memory collections."""
     docs: list[str] = []
     seen: set[str] = set()
     per_collection_k = max(1, k)
@@ -104,6 +112,7 @@ def rag_upsert_docs(
     items: list[MemoryDoc],
     embedding_fn=None,
 ) -> None:
+    """Upsert generic memory documents into one collection."""
     if not items:
         return
     col = get_collection(chroma_client, db_key, memory_type, embedding_fn=embedding_fn)
@@ -120,6 +129,7 @@ def rag_upsert_catalog(
     catalog: DBCatalogLite,
     embedding_fn=None,
 ) -> None:
+    """Store discovered schema catalog into schema memory."""
     items: list[MemoryDoc] = []
     now = datetime.utcnow().isoformat()
 
@@ -154,6 +164,7 @@ def rag_upsert_semantics(
     catalog: DBCatalogLite | None = None,
     embedding_fn=None,
 ) -> None:
+    """Store SQL patterns and related semantic hints."""
     now = datetime.utcnow().isoformat()
     items: list[MemoryDoc] = []
 
@@ -198,6 +209,7 @@ def rag_upsert_session_turn(
     user_output: str,
     embedding_fn=None,
 ) -> None:
+    """Store one user request and assistant answer in session memory."""
     now = datetime.utcnow().isoformat()
     req = (user_request or "").strip()
     out = (user_output or "").strip()

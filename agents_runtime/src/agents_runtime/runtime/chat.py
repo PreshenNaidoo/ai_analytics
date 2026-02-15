@@ -17,8 +17,10 @@ FinalCallback = Callable[[str], None]
 
 
 def build_chat_agent(ctx: RuntimeContext, db_key: str) -> Agent:
+    """Build the user-facing chat orchestrator agent."""
     @function_tool
     async def run_analytics_pipeline(user_request: str) -> str:
+        """Run full analytics pipeline and return formatted output."""
         result = await run_request(ctx, user_request, db_key=db_key, use_narrator=True)
         return result.final_output
 
@@ -33,6 +35,7 @@ def build_chat_agent(ctx: RuntimeContext, db_key: str) -> Agent:
 
 
 async def run_chat_request(ctx: RuntimeContext, user_prompt: str, db_key: str) -> str:
+    """Run a single non-streamed chat request."""
     chat_agent = build_chat_agent(ctx, db_key)
     res = await Runner.run(chat_agent, user_prompt, max_turns=ctx.settings.max_turns_chat_orchestrator)
     out = res.final_output
@@ -44,6 +47,7 @@ async def run_chat_request(ctx: RuntimeContext, user_prompt: str, db_key: str) -
 
 
 def tool_friendly_name(tool_name: str) -> str:
+    """Map internal tool names to user-friendly progress text."""
     mapping = {
         "run_analytics_pipeline": "Analyzing your data",
         "run_structured_analysis": "Preparing detailed results",
@@ -61,6 +65,7 @@ async def stream_chat_request(
     on_text_delta: TextDeltaCallback | None = None,
     on_final: FinalCallback | None = None,
 ) -> str:
+    """Stream chat output and optional status updates via callbacks."""
     chat_agent = build_chat_agent(ctx, db_key)
     stream = Runner.run_streamed(chat_agent, user_prompt, max_turns=ctx.settings.max_turns_chat_orchestrator)
 

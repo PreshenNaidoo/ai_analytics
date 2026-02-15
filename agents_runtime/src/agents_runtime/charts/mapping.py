@@ -9,6 +9,7 @@ from agents_runtime.sql.execution import normalize_model_output, read_top_rows_f
 
 
 def coerce_float(v: Any) -> float | None:
+    """Convert a value to float when possible, otherwise return None."""
     if v is None:
         return None
     if isinstance(v, (int, float)):
@@ -21,6 +22,7 @@ def coerce_float(v: Any) -> float | None:
 
 
 def numeric_score(rows: list[list[Any]], col_i: int, sample_n: int = 30) -> int:
+    """Score how many sample values in a column look numeric."""
     score = 0
     for r in rows[:sample_n]:
         if len(r) <= col_i:
@@ -31,6 +33,7 @@ def numeric_score(rows: list[list[Any]], col_i: int, sample_n: int = 30) -> int:
 
 
 def to_chart_data(rows: list[list[Any]], columns: list[str], mapping: ChartMapping) -> dict[str, Any]:
+    """Transform table rows into chart-server tool input."""
     idx = {c: i for i, c in enumerate(columns)}
 
     if mapping.chart_type in ["line", "column", "bar"]:
@@ -90,6 +93,7 @@ def to_chart_data(rows: list[list[Any]], columns: list[str], mapping: ChartMappi
 
 
 def extract_chart_image_url(result: Any) -> str | None:
+    """Extract a chart image URL from chart MCP response parts."""
     if not result or not getattr(result, "content", None):
         return None
     for part in result.content:
@@ -117,6 +121,7 @@ async def maybe_generate_chart(
     include_chart: bool,
     detail_export_path: str | None = None,
 ) -> dict[str, Any] | None:
+    """Generate a chart artifact when charting is applicable."""
     if not include_chart or not ares.insight_tables:
         return None
 
