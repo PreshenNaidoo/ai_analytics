@@ -9,8 +9,19 @@ import os
 class RuntimeSettings:
     """Holds runtime settings used by the agents backend."""
     # Models and temperatures
-    model_general: str = "gpt-4.1-mini"
-    model_planner: str = "gpt-4.1-mini"
+    # OpenAI examples:
+    # model_general: str = "gpt-4.1-mini"
+    # model_planner: str = "gpt-4.1-mini"
+    #
+    # Anthropic via LiteLLM examples:
+    # model_general: str = "anthropic/claude-3-5-sonnet-latest"
+    # model_planner: str = "anthropic/claude-3-5-sonnet-latest"
+    #
+    # Grok via LiteLLM examples:
+    # model_general: str = "xai/grok-2-latest"
+    # model_planner: str = "xai/grok-2-latest"
+    model_general: str = "gpt-5.2"
+    model_planner: str = "gpt-5.2"
     default_temperature: float = 0.5
     sql_temperature: float = 0.1
 
