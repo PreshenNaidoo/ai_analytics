@@ -323,20 +323,12 @@ Important:
 
 ## 10. Run the smoke test notebook
 
-### 10.1 Start Jupyter Lab
-
-From repo root, run:
-
-```bash
-uv run --with ipykernel jupyter lab
-```
-
-### 10.2 Open notebook
+### 10.1 Open notebook
 
 Open:
 - `agents_runtime/tests/smoke_agents_runtime.ipynb`
 
-### 10.3 Run all cells top-to-bottom
+### 10.2 Run all cells top-to-bottom
 
 Expected result:
 - Runtime context loads
