@@ -1,10 +1,6 @@
 # Windows Setup Guide (Main Branch)
 
-This guide is for the current `main` branch.
-
-What is runnable on this branch:
 - The main working path is `agents_runtime/tests/smoke_agents_runtime.ipynb`
-- There is no `scripts/dev-up.sh` flow on this branch
 
 ## 1. Install WSL + Ubuntu
 
