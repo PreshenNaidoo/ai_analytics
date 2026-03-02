@@ -4,7 +4,8 @@
 import json
 from collections.abc import Callable
 
-from agents import Agent, ModelSettings, Runner, function_tool
+from agents import Agent, ModelSettings, RunConfig, Runner, function_tool
+from agents.extensions.models.litellm_provider import LitellmProvider
 
 from agents_runtime.prompts import load_prompt
 from agents_runtime.runtime.context import RuntimeContext
@@ -14,6 +15,7 @@ from agents_runtime.runtime.pipeline import run_request
 ToolStatusCallback = Callable[[str], None]
 TextDeltaCallback = Callable[[str], None]
 FinalCallback = Callable[[str], None]
+RUN_CONFIG = RunConfig(model_provider=LitellmProvider())
 
 
 def build_chat_agent(ctx: RuntimeContext, db_key: str) -> Agent:
@@ -37,7 +39,12 @@ def build_chat_agent(ctx: RuntimeContext, db_key: str) -> Agent:
 async def run_chat_request(ctx: RuntimeContext, user_prompt: str, db_key: str) -> str:
     """Run a single non-streamed chat request."""
     chat_agent = build_chat_agent(ctx, db_key)
-    res = await Runner.run(chat_agent, user_prompt, max_turns=ctx.settings.max_turns_chat_orchestrator)
+    res = await Runner.run(
+        chat_agent,
+        user_prompt,
+        max_turns=ctx.settings.max_turns_chat_orchestrator,
+        run_config=RUN_CONFIG,
+    )
     out = res.final_output
     if isinstance(out, str):
         return out
@@ -67,7 +74,12 @@ async def stream_chat_request(
 ) -> str:
     """Stream chat output and optional status updates via callbacks."""
     chat_agent = build_chat_agent(ctx, db_key)
-    stream = Runner.run_streamed(chat_agent, user_prompt, max_turns=ctx.settings.max_turns_chat_orchestrator)
+    stream = Runner.run_streamed(
+        chat_agent,
+        user_prompt,
+        max_turns=ctx.settings.max_turns_chat_orchestrator,
+        run_config=RUN_CONFIG,
+    )
 
     text_buf = ""
     has_streamed_output = False

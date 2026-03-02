@@ -4,7 +4,8 @@
 import json
 from typing import Any
 
-from agents import Agent, ModelSettings, Runner
+from agents import Agent, ModelSettings, RunConfig, Runner
+from agents.extensions.models.litellm_provider import LitellmProvider
 
 from agents_runtime.charts.mapping import maybe_generate_chart
 from agents_runtime.knowledge_base.selector import build_kb_context
@@ -21,6 +22,8 @@ from agents_runtime.structured_outputs import (
     NotebookRunResult,
     PlannerDecision,
 )
+
+RUN_CONFIG = RunConfig(model_provider=LitellmProvider())
 
 
 def _parse_model(model_cls, text: str, label: str = "model_output"):
@@ -85,7 +88,12 @@ def build_agents(ctx: RuntimeContext) -> dict[str, Agent]:
 
 async def run_structured(agent: Agent, payload: dict[str, Any], model_cls, *, debug_label: str, max_turns: int):
     """Run an agent and coerce output into the expected model class."""
-    res = await Runner.run(agent, json.dumps(payload), max_turns=max_turns)
+    res = await Runner.run(
+        agent,
+        json.dumps(payload),
+        max_turns=max_turns,
+        run_config=RUN_CONFIG,
+    )
     out = res.final_output
 
     if isinstance(out, model_cls):
