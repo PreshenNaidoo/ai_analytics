@@ -2,7 +2,7 @@
 name = "agents-runtime"
 version = "0.1.0"
 description = "Pure runtime package for AI analytics agents"
-readme = "README.md"
+readme = { text = "Runtime package for the ai_analytics prompt-to-analytics workspace. See the repository root README.md for project documentation.", content-type = "text/markdown" }
 requires-python = ">=3.12"
 dependencies = [
   "chromadb>=1.5.0",
